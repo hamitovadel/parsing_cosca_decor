@@ -11,8 +11,8 @@ OUT_JSON_FILENAME = 'out.json'
 OUT_XLSX_FILENAME = 'out.xlsx'
 main_link = 'https://cosca.ru'
 headers = {
-"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 "
-              "Safari/537.36 "
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 "
+                  "Safari/537.36 "
 }
 
 
@@ -38,7 +38,7 @@ def get_product_links(pages_count):
 
 def product_parse(links):
     data = []
-    for link in tqdm(links):
+    for link in links:
         req = requests.get(url=link, headers=headers)
         # with open(f'data/product.{links.index(link)}.html', 'w', encoding='utf-8') as file:
         #     file.write(req.text)
@@ -64,18 +64,7 @@ def product_parse(links):
             data.append(product)
 
             # get images
-            all_images = soup.find(class_='product-image').find_all('a')
-            image_count = 1
-            for image in all_images[1:]:
-                images_links = image.get('href')
-                image_bytes = requests.get(f'{main_link}{images_links}', headers=headers).content
-                subdir = product_name
-                if not os.path.exists('images/' + subdir):
-                    os.mkdir('images/' + subdir)
-                with open(f'images/{subdir}/{product_name}-{image_count}.jpg', 'wb') as file:
-                    file.write(image_bytes)
-                image_count += 1
-                # print(f'Image - {product_name}-{image_count} successfully downloaded')
+            get_images(soup, product_name)
 
         except Exception as ex:
             data.append(product)
@@ -84,12 +73,28 @@ def product_parse(links):
     return data
 
 
-def json_dump(data):                                            # dump data to json
+# get images
+def get_images(soup, product_name):
+    all_images = soup.find(class_='product-image').find_all('a')
+    image_count = 1
+    for image in all_images[1:]:
+        images_links = image.get('href')
+        image_bytes = requests.get(f'{main_link}{images_links}', headers=headers).content
+        subdir = product_name
+        if not os.path.exists('images/' + subdir):
+            os.mkdir('images/' + subdir)
+        with open(f'images/{subdir}/{product_name}-{image_count}.jpg', 'wb') as file:
+            file.write(image_bytes)
+        # print(f'Image - {product_name}-{image_count} successfully downloaded')
+        image_count += 1
+
+
+def json_dump(data):  # dump data to json
     with open(OUT_JSON_FILENAME, 'w') as file:
         json.dump(data, file, ensure_ascii=False, indent=1)
 
 
-def xlsx_dump(filename, data):                                  # dump data to .xlsx(excel table)
+def xlsx_dump(filename, data):  # dump data to .xlsx(excel table)
     if not len(data):
         return None
 
